@@ -1,0 +1,162 @@
+{
+  "name": "high_cpu_usage_on_postgresql_server",
+  "description": "High CPU usage on a PostgreSQL server is a common incident that can impact overall system performance. This issue occurs when the server's CPU usage is abnormally high, which can lead to slow database queries, reduced server performance, and even downtime. Identifying the root cause of the high CPU usage and implementing effective mitigation measures are critical to resolving this incident.",
+  "params": [
+    {
+      "name": "MAXIMUM_NUMBER_OF_CONNECTIONS",
+      "value": ""
+    },
+    {
+      "name": "PID",
+      "value": ""
+    },
+    {
+      "name": "LOG_FILE_PATH",
+      "value": ""
+    },
+    {
+      "name": "ZONE_NAME",
+      "value": ""
+    },
+    {
+      "name": "INSTANCE_NAME",
+      "value": ""
+    },
+    {
+      "name": "NEW_INSTANCE_TYPE",
+      "value": ""
+    },
+    {
+      "name": "REGION_RESOURCE_GROUP_PROJECT_NAME",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## High CPU Usage on PostgreSQL Server\nHigh CPU usage on a PostgreSQL server is a common incident that can impact overall system performance. This issue occurs when the server's CPU usage is abnormally high, which can lead to slow database queries, reduced server performance, and even downtime. Identifying the root cause of the high CPU usage and implementing effective mitigation measures are critical to resolving this incident."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check CPU usage by process ID (replace ${PID} with PostgreSQL process ID)"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `top -p ${PID}`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check active queries on PostgreSQL database"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo -u postgres psql -c \"SELECT * FROM pg_stat_activity;\"`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Identify the query with the highest CPU usage"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo -u postgres psql -c \"SELECT pid, query, usename, datname, state, query_start FROM pg_stat_activity ORDER BY query_cpu_time DESC LIMIT 1;\"`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check for any long-running queries"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo -u postgres psql -c \"SELECT pid, query, usename, datname, state, query_start FROM pg_stat_activity WHERE state='active' AND query_start < NOW() - interval '5 minutes';\"`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check for any blocked queries"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `sudo -u postgres psql -c \"SELECT pid, usename, blocked_pid, query_start FROM pg_stat_activity WHERE state='active' AND waiting='t';\"`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any slow queries using pgBadger (replace <LOG_FILE_PATH> with PostgreSQL log file path)"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `pgbadger ${LOG_FILE_PATH} -f stderr -p '%t:%r:%u@%d:[%p]:' -T -j 10`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## An increase in the number of incoming requests to the PostgreSQL server, exceeding its processing capacity."
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_check_connections_limit($MAXIMUM_NUMBER_OF_CONNECTIONS)"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Insufficient memory allocation to the PostgreSQL server, leading to excessive swapping and increased CPU usage."
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_mem_check_script()"
+    },
+    {
+      "name": "cell_18",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Consider upgrading the server hardware or adding more resources, such as CPU cores or memory, to tackle the high CPU usage."
+    },
+    {
+      "name": "cell_19",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_change_instance_types($ZONE_NAME, $INSTANCE_NAME, $NEW_INSTANCE_TYPE, $REGION_RESOURCE_GROUP_PROJECT_NAME)"
+    }
+  ]
+}
