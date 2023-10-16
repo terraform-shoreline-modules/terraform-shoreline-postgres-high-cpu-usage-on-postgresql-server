@@ -1,7 +1,7 @@
 resource "shoreline_notebook" "high_cpu_usage_on_postgresql_server" {
   name       = "high_cpu_usage_on_postgresql_server"
   data       = file("${path.module}/data/high_cpu_usage_on_postgresql_server.json")
-  depends_on = [shoreline_action.invoke_check_connections_limit,shoreline_action.invoke_mem_check_script,shoreline_action.invoke_change_instance_types]
+  depends_on = [shoreline_action.invoke_check_connections_limit,shoreline_action.invoke_mem_usage_script,shoreline_action.invoke_change_instance_type]
 }
 
 resource "shoreline_file" "check_connections_limit" {
@@ -14,22 +14,22 @@ resource "shoreline_file" "check_connections_limit" {
   enabled          = true
 }
 
-resource "shoreline_file" "mem_check_script" {
-  name             = "mem_check_script"
-  input_file       = "${path.module}/data/mem_check_script.sh"
-  md5              = filemd5("${path.module}/data/mem_check_script.sh")
+resource "shoreline_file" "mem_usage_script" {
+  name             = "mem_usage_script"
+  input_file       = "${path.module}/data/mem_usage_script.sh"
+  md5              = filemd5("${path.module}/data/mem_usage_script.sh")
   description      = "Insufficient memory allocation to the PostgreSQL server, leading to excessive swapping and increased CPU usage."
-  destination_path = "/tmp/mem_check_script.sh"
+  destination_path = "/tmp/mem_usage_script.sh"
   resource_query   = "host"
   enabled          = true
 }
 
-resource "shoreline_file" "change_instance_types" {
-  name             = "change_instance_types"
-  input_file       = "${path.module}/data/change_instance_types.sh"
-  md5              = filemd5("${path.module}/data/change_instance_types.sh")
+resource "shoreline_file" "change_instance_type" {
+  name             = "change_instance_type"
+  input_file       = "${path.module}/data/change_instance_type.sh"
+  md5              = filemd5("${path.module}/data/change_instance_type.sh")
   description      = "Consider upgrading the server hardware or adding more resources, such as CPU cores or memory, to tackle the high CPU usage."
-  destination_path = "/tmp/change_instance_types.sh"
+  destination_path = "/tmp/change_instance_type.sh"
   resource_query   = "host"
   enabled          = true
 }
@@ -44,23 +44,23 @@ resource "shoreline_action" "invoke_check_connections_limit" {
   depends_on  = [shoreline_file.check_connections_limit]
 }
 
-resource "shoreline_action" "invoke_mem_check_script" {
-  name        = "invoke_mem_check_script"
+resource "shoreline_action" "invoke_mem_usage_script" {
+  name        = "invoke_mem_usage_script"
   description = "Insufficient memory allocation to the PostgreSQL server, leading to excessive swapping and increased CPU usage."
-  command     = "`chmod +x /tmp/mem_check_script.sh && /tmp/mem_check_script.sh`"
+  command     = "`chmod +x /tmp/mem_usage_script.sh && /tmp/mem_usage_script.sh`"
   params      = []
-  file_deps   = ["mem_check_script"]
+  file_deps   = ["mem_usage_script"]
   enabled     = true
-  depends_on  = [shoreline_file.mem_check_script]
+  depends_on  = [shoreline_file.mem_usage_script]
 }
 
-resource "shoreline_action" "invoke_change_instance_types" {
-  name        = "invoke_change_instance_types"
+resource "shoreline_action" "invoke_change_instance_type" {
+  name        = "invoke_change_instance_type"
   description = "Consider upgrading the server hardware or adding more resources, such as CPU cores or memory, to tackle the high CPU usage."
-  command     = "`chmod +x /tmp/change_instance_types.sh && /tmp/change_instance_types.sh`"
-  params      = ["ZONE_NAME","INSTANCE_NAME","NEW_INSTANCE_TYPE","REGION_RESOURCE_GROUP_PROJECT_NAME"]
-  file_deps   = ["change_instance_types"]
+  command     = "`chmod +x /tmp/change_instance_type.sh && /tmp/change_instance_type.sh`"
+  params      = ["INSTANCE_NAME","REGION_RESOURCE_GROUP_PROJECT_NAME","ZONE_NAME","NEW_INSTANCE_TYPE"]
+  file_deps   = ["change_instance_type"]
   enabled     = true
-  depends_on  = [shoreline_file.change_instance_types]
+  depends_on  = [shoreline_file.change_instance_type]
 }
 

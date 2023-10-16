@@ -3,19 +3,7 @@
   "description": "High CPU usage on a PostgreSQL server is a common incident that can impact overall system performance. This issue occurs when the server's CPU usage is abnormally high, which can lead to slow database queries, reduced server performance, and even downtime. Identifying the root cause of the high CPU usage and implementing effective mitigation measures are critical to resolving this incident.",
   "params": [
     {
-      "name": "MAXIMUM_NUMBER_OF_CONNECTIONS",
-      "value": ""
-    },
-    {
-      "name": "PID",
-      "value": ""
-    },
-    {
       "name": "LOG_FILE_PATH",
-      "value": ""
-    },
-    {
-      "name": "ZONE_NAME",
       "value": ""
     },
     {
@@ -23,11 +11,23 @@
       "value": ""
     },
     {
+      "name": "REGION_RESOURCE_GROUP_PROJECT_NAME",
+      "value": ""
+    },
+    {
+      "name": "MAXIMUM_NUMBER_OF_CONNECTIONS",
+      "value": ""
+    },
+    {
+      "name": "ZONE_NAME",
+      "value": ""
+    },
+    {
       "name": "NEW_INSTANCE_TYPE",
       "value": ""
     },
     {
-      "name": "REGION_RESOURCE_GROUP_PROJECT_NAME",
+      "name": "PID",
       "value": ""
     },
     {
@@ -144,7 +144,7 @@
       "name": "cell_17",
       "type": "OP_LANG",
       "enabled": true,
-      "content": "host | host_name=$HOST_NAME | invoke_mem_check_script()"
+      "content": "host | host_name=$HOST_NAME | invoke_mem_usage_script()"
     },
     {
       "name": "cell_18",
@@ -156,7 +156,7 @@
       "name": "cell_19",
       "type": "OP_LANG",
       "enabled": true,
-      "content": "host | host_name=$HOST_NAME | invoke_change_instance_types($ZONE_NAME, $INSTANCE_NAME, $NEW_INSTANCE_TYPE, $REGION_RESOURCE_GROUP_PROJECT_NAME)"
+      "content": "host | host_name=$HOST_NAME | invoke_change_instance_type($INSTANCE_NAME, $REGION_RESOURCE_GROUP_PROJECT_NAME, $ZONE_NAME, $NEW_INSTANCE_TYPE)"
     }
   ]
 }
